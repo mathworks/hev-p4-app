@@ -5,7 +5,6 @@ function [fid,rpt] = HEVReportGen(Data,Results,Author,ReportAxes,DriveCyc,Bar)
 %
 try
     fid         = true;
-    emailAdress = Author + "@mathworks.com";
     simDate     = string(datetime('now','TimeZone','local','Format','d-MMM-y HH:mm'));
     dd          = datetime;
     reportName  = "HEVreport_" + year(dd) + month(dd) + day(dd) + "_" + hour(dd) + minute(dd) + ".docx";
@@ -80,8 +79,6 @@ try
                 append(rpt,"HEV P4 Reference Application");
             case "Author"
                 append(rpt,Author);
-            case "email"
-                append(rpt,emailAdress);
             case "fileName"
                 append(rpt,reportName);
             case "Status"
