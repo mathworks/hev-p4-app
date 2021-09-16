@@ -11,11 +11,11 @@ classdef SimulationHandler < handle
     properties
         OutputNamesFile = "SimulationOutputs.xlsx"
         OutputName
-        TMB % Tunable Model Parameters
+        TMP % Tunable Model Parameters
         IsSimulating = false
         WasSimulating = false
         IsPastResultsLoaded = false
-        ProgressPercentage
+        ProgressPercentage = 0
         Map
         PastResults
         Results
@@ -41,7 +41,7 @@ classdef SimulationHandler < handle
             % passed explicitly to the simulation input object. Each case
             % selects the same model with a different variant selected (the
             % vehicle engine)
-            switch obj.TMB.Engine
+            switch obj.TMP.Engine
                 case 'SiEngine'
                     obj.ModelName = 'Hev_SiEngine';
                     obj.SimIn = Simulink.SimulationInput('Hev_SiEngine');
@@ -56,21 +56,21 @@ classdef SimulationHandler < handle
             end
             
             % If repetability checkbox is on, then repeat drive cycle cyclically
-            if obj.TMB.EndSimulationTime > obj.TMB.DriveCycle.Time(end)
-                RepeatTimes = floor(obj./obj.TMB.DriveCycle.Data(end));
-                [~, Remainder] = min(abs(obj.TMB.DriveCycle.Time-rem(obj.TMB.EndSimulationTime,obj.TMB.DriveCycle.Time(end))));
-                Time = obj.TMB.DriveCycle.Time;
+            if obj.TMP.EndSimulationTime > obj.TMP.DriveCycle.Time(end)
+                RepeatTimes = floor(obj./obj.TMP.DriveCycle.Data(end));
+                [~, Remainder] = min(abs(obj.TMP.DriveCycle.Time-rem(obj.TMP.EndSimulationTime,obj.TMP.DriveCycle.Time(end))));
+                Time = obj.TMP.DriveCycle.Time;
                 for i = 1:dum-1
-                    Time = [Time; Time(end) + obj.TMB.DriveCycle.Time]; %#ok<AGROW>
+                    Time = [Time; Time(end) + obj.TMP.DriveCycle.Time]; %#ok<AGROW>
                 end
-                Time = [Time; Time(end) + obj.TMB.DriveCycle.Time(1:dum1)];
-                Velocity = [repmat(obj.TMB.DriveCycle.Data,RepeatTimes,1); obj.TMB.DriveCycle.Data(1:Remainder)];
+                Time = [Time; Time(end) + obj.TMP.DriveCycle.Time(1:dum1)];
+                Velocity = [repmat(obj.TMP.DriveCycle.Data,RepeatTimes,1); obj.TMP.DriveCycle.Data(1:Remainder)];
             else
-                Time = obj.TMB.DriveCycle.Time;
-                Velocity = obj.TMB.DriveCycle.Data;
+                Time = obj.TMP.DriveCycle.Time;
+                Velocity = obj.TMP.DriveCycle.Data;
             end
 
-            switch obj.TMB.Units
+            switch obj.TMP.Units
                 case 'km/h'
                     Velocity = Velocity*0.277778;
                 case 'mph'
@@ -81,22 +81,22 @@ classdef SimulationHandler < handle
             obj.SimIn.ExternalInput = [Time Velocity];
             
             % Set simulation end time
-            obj.SimIn = obj.SimIn.setModelParameter('StopTime',num2str(obj.TMB.EndSimulationTime));
+            obj.SimIn = obj.SimIn.setModelParameter('StopTime',num2str(obj.TMP.EndSimulationTime));
             % Set environment parameters
-            obj.SimIn = obj.SimIn.setVariable('Pressure',obj.TMB.Pressure*101325,'Workspace', obj.ModelName);
-            obj.SimIn = obj.SimIn.setVariable('Temperature',obj.TMB.Temperature,'Workspace', obj.ModelName);
-            obj.SimIn = obj.SimIn.setVariable('Grade',obj.TMB.Grade,'Workspace', obj.ModelName);
-            obj.SimIn = obj.SimIn.setVariable('WindSpeed',obj.TMB.WindSpeed,'Workspace', obj.ModelName);
+            obj.SimIn = obj.SimIn.setVariable('Pressure',obj.TMP.Pressure*101325,'Workspace', obj.ModelName);
+            obj.SimIn = obj.SimIn.setVariable('Temperature',obj.TMP.Temperature,'Workspace', obj.ModelName);
+            obj.SimIn = obj.SimIn.setVariable('Grade',obj.TMP.Grade,'Workspace', obj.ModelName);
+            obj.SimIn = obj.SimIn.setVariable('WindSpeed',obj.TMP.WindSpeed,'Workspace', obj.ModelName);
             % Set vehicle parameters
-            obj.SimIn = obj.SimIn.setVariable('LoadedRadius',obj.TMB.LoadedRadius,'Workspace', obj.ModelName);
-            obj.SimIn = obj.SimIn.setVariable('UnloadedRadius',obj.TMB.UnloadedRadius,'Workspace', obj.ModelName);
-            obj.SimIn = obj.SimIn.setVariable('VehicleMass',obj.TMB.VehicleMass,'Workspace', obj.ModelName);
-            obj.SimIn = obj.SimIn.setVariable('InitialCapacity',obj.TMB.InitialSOC*0.053,'Workspace', obj.ModelName);
+            obj.SimIn = obj.SimIn.setVariable('LoadedRadius',obj.TMP.LoadedRadius,'Workspace', obj.ModelName);
+            obj.SimIn = obj.SimIn.setVariable('UnloadedRadius',obj.TMP.UnloadedRadius,'Workspace', obj.ModelName);
+            obj.SimIn = obj.SimIn.setVariable('VehicleMass',obj.TMP.VehicleMass,'Workspace', obj.ModelName);
+            obj.SimIn = obj.SimIn.setVariable('InitialCapacity',obj.TMP.InitialSOC*0.053,'Workspace', obj.ModelName);
             obj.SimIn = obj.SimIn.setVariable('InitialVoltage',...
-                obj.TMB.BatteryParam.('Ns')*...
-                interp1(obj.TMB.BatteryParam.('CapLUTBp'),...
-                obj.TMB.BatteryParam.('Em'),...
-                obj.TMB.InitialSOC/100),'Workspace', obj.ModelName);
+                obj.TMP.BatteryParam.('Ns')*...
+                interp1(obj.TMP.BatteryParam.('CapLUTBp'),...
+                obj.TMP.BatteryParam.('Em'),...
+                obj.TMP.InitialSOC/100),'Workspace', obj.ModelName);
             
             %%
             % Configure for deployment
@@ -120,7 +120,7 @@ classdef SimulationHandler < handle
         function processOutputs(obj, opIdx, Time, Data)
             obj.Results.Time{opIdx} = [obj.Results.Time{opIdx} Time];
             obj.Results.Data{opIdx} = [obj.Results.Data{opIdx} Data];
-            obj.ProgressPercentage = ceil(Time/obj.TMB.EndSimulationTime*100);
+            obj.ProgressPercentage = ceil(Time/obj.TMP.EndSimulationTime*100);
         end
     end % methods (Access = private)
     
@@ -166,7 +166,7 @@ classdef SimulationHandler < handle
         end
  
         function obj = SimulationHandler   
-            obj.TMB = HEVData;
+            obj.TMP = HEVData;
             % Read simulation outputs and create map container
             tab = readtable(obj.OutputNamesFile);
             obj.OutputName = tab.Name;
@@ -203,19 +203,17 @@ classdef SimulationHandler < handle
         end
         
         function restore(obj)
-            restore(obj.TMB)
-            obj.IsSimulating = false;
-            obj.WasSimulating = false;
-            obj.IsPastResultsLoaded = false;
-            obj.ProgressPercentage = 0;
-            obj.PastResults.Time = [];
-            obj.PastResults.Data = [];
-            for i = 1:obj.NOutputs
-                obj.Results.Time{i} = 0;
-                obj.Results.Data{i} = 0;
+            
+            restore(obj.TMP)
+            
+            mc = ?SimulationHandler;
+            mp = mc.PropertyList;
+            for k = 1:length(mp)
+                if mp(k).HasDefault
+                    obj.(mp(k).Name) = mp(k).DefaultValue;
+                end
             end
-            obj.ShowLive = true;
-            obj.SimIn = [];
+
         end                
     end
 end

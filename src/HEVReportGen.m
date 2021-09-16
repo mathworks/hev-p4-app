@@ -30,13 +30,13 @@ try
     %%
     % env. variable table
     Parameters = {'Pressure';   'Temperature';   'Wind Speed';    'Grade'};
-    Value      = [Data.TMB.Pressure,Data.TMB.Temperature,Data.TMB.WindSpeed,Data.TMB.Grade]';
+    Value      = [Data.TMP.Pressure,Data.TMP.Temperature,Data.TMP.WindSpeed,Data.TMP.Grade]';
     Units      = {'Pa';            'K';             'm/s';        'deg'};
     envTable = table(Parameters, Value, Units);
     %%
     % vehicle Parameters
     Parameters = {'Loaded Wheel Radius';'Unloaded Wheel Radius';'Vehicle Mass';'Initial Battery SOC'};
-    Value      = [Data.TMB.LoadedRadius,    Data.TMB.UnloadedRadius,     Data.TMB.VehicleMass,     Data.TMB.InitialSOC]';
+    Value      = [Data.TMP.LoadedRadius,    Data.TMP.UnloadedRadius,     Data.TMP.VehicleMass,     Data.TMP.InitialSOC]';
     Units      = {'m';'m';'kg';'%'};
     vehTable   = table(Parameters, Value, Units);
     %%
@@ -99,9 +99,9 @@ try
                 append(rpt,imageObj);
                 append(rpt,"Hybrid Electric Vehicle P4 Reference Application");
             case "DriveCycle"
-                append(rpt,Data.TMB.DriveCycleType);
+                append(rpt,Data.TMP.DriveCycleType);
             case "EngineType"
-                append(rpt,Data.TMB.Engine);
+                append(rpt,Data.TMP.Engine);
             case "DriveCycleVel"
                 DriveCyc.Children(1).LineWidth=1;
                 exportgraphics(DriveCyc,fileName)

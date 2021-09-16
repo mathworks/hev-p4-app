@@ -161,7 +161,7 @@ classdef AppSession < handle
                 case {'matlab.ui.control.Table'}
                     Prop = {'Data'};
                 case {'SimulationHandler'}
-                    Prop = {'TMB'}; % Tunable Model Parameters
+                    Prop = {'TMP'}; % Tunable Model Parameters
                 case {'matlab.ui.control.Button'}
                     Prop = {'Enable'};
                 otherwise
