@@ -1,5 +1,5 @@
 % Copyright 2021 The MathWorks, Inc.
-function [fid,rpt] = HEVReportGen(Data,Results,Author,ReportAxes,DriveCyc,Bar)
+function [fid,rpt] = HEVReportGen(Data, Author, ReportAxes, DriveCyc,Bar)
 %%
 % Automating HEV4 report generation
 %
@@ -17,7 +17,7 @@ try
     % end
     import mlreportgen.dom.*
     % If application is deployed, generate path relative to temp directory
-    templateName = 'HEV4Temp.dotx';
+    templateName = 'HEVP4Temp.dotx';
     rpt = Document(reportName,'docx', templatePath(templateName));
     open(rpt);
     %%
@@ -30,34 +30,24 @@ try
     %%
     % env. variable table
     Parameters = {'Pressure';   'Temperature';   'Wind Speed';    'Grade'};
-    Value      = [Data.Pressure,Data.Temperature,Data.WindSpeed,Data.Grade]';
+    Value      = [Data.TMB.Pressure,Data.TMB.Temperature,Data.TMB.WindSpeed,Data.TMB.Grade]';
     Units      = {'Pa';            'K';             'm/s';        'deg'};
-    envTable = table(Parameters,Value,Units);
+    envTable = table(Parameters, Value, Units);
     %%
     % vehicle Parameters
     Parameters = {'Loaded Wheel Radius';'Unloaded Wheel Radius';'Vehicle Mass';'Initial Battery SOC'};
-    Value      = [Data.LoadedRadius,    Data.UnloadedRadius,     Data.Mass,     Data.BatterySOC]';
+    Value      = [Data.TMB.LoadedRadius,    Data.TMB.UnloadedRadius,     Data.TMB.VehicleMass,     Data.TMB.InitialSOC]';
     Units      = {'m';'m';'kg';'%'};
-    vehTable   = table(Parameters,Value,Units);
+    vehTable   = table(Parameters, Value, Units);
     %%
     % output preparation
-    titleList  = ["Trace Velocity, Target, Actual (mph)";...
-        "Engine/Motor Speed (RPM)";...
-        "Engine/Motor Torque (Nm)";...
-        "Battery Current (A)";...
-        "Battery SOC";...
-        "US Fuel Economy (MPGe)";...
-        "TP HC Mass";...
-        "TP CO Mass";...
-        "TP NOx Mass";...
-        "TP CO2 Mass"];
     legendList = {'target','actual';...
         'engine','motor';...
         'engine','motor'};
     
-    for i = 1 : numel(titleList)
+    for i = 1 : Data.NOutputs
         
-        plot(ReportAxes,  Results.Time{i},Results.Data{i},'linewidth', 2)
+        plot(ReportAxes,  Data.Results.Time{i}, Data.Results.Data{i}, Linewidth=2)
         if i <= 3
             lgd =  legend(ReportAxes,legendList{i,:});
         elseif i==4
@@ -109,9 +99,9 @@ try
                 append(rpt,imageObj);
                 append(rpt,"Hybrid Electric Vehicle P4 Reference Application");
             case "DriveCycle"
-                append(rpt,Data.DriveCycleID);
+                append(rpt,Data.TMB.DriveCycleType);
             case "EngineType"
-                append(rpt,Data.Engine);
+                append(rpt,Data.TMB.Engine);
             case "DriveCycleVel"
                 DriveCyc.Children(1).LineWidth=1;
                 exportgraphics(DriveCyc,fileName)
@@ -127,27 +117,27 @@ try
             case "vehTable"
                 append(rpt,MATLABTable(vehTable));
             case "Title1"
-                plotSimulation(rpt,"plot1.jpg",titleList(1))
+                plotSimulation(rpt,"plot1.jpg",Data.OutputName{1})
             case "Title2"
-                plotSimulation(rpt,"plot2.jpg",titleList(2))
+                plotSimulation(rpt,"plot2.jpg",Data.OutputName{2})
             case "Title3"
-                plotSimulation(rpt,"plot3.jpg",titleList(3))
+                plotSimulation(rpt,"plot3.jpg",Data.OutputName{3})
             case "Title4"
-                plotSimulation(rpt,"plot4.jpg",titleList(4))
+                plotSimulation(rpt,"plot4.jpg",Data.OutputName{4})
             case "Title5"
-                plotSimulation(rpt,"plot5.jpg",titleList(5))
+                plotSimulation(rpt,"plot5.jpg",Data.OutputName{5})
             case "Title6"
-                plotSimulation(rpt,"plot6.jpg",titleList(6))
+                plotSimulation(rpt,"plot6.jpg",Data.OutputName{6})
             case "Title7"
-                plotSimulation(rpt,"plot7.jpg",titleList(7))
+                plotSimulation(rpt,"plot7.jpg",Data.OutputName{7})
             case "Title8"
-                plotSimulation(rpt,"plot8.jpg",titleList(8))
+                plotSimulation(rpt,"plot8.jpg",Data.OutputName{8})
             case "Title9"
-                plotSimulation(rpt,"plot9.jpg",titleList(9))
+                plotSimulation(rpt,"plot9.jpg",Data.OutputName{9})
             case "Title10"
-                plotSimulation(rpt,"plot10.jpg",titleList(10))
-            case "TOCPlaceHolder"
-                toc = append(rpt,TOC(2));
+                plotSimulation(rpt,"plot10.jpg",Data.OutputName{10})
+            case "Title11"
+                plotSimulation(rpt,"plot11.jpg",Data.OutputName{11})
             case "MWCopyright"
                 append(rpt,"© 1994-2021 The MathWorks, Inc.");
         end
@@ -184,9 +174,9 @@ end
         imageObj.Height = '9cm';
     end
 
-    function plotSimulation(rpt,fileName,titleList)
+    function plotSimulation(rpt,fileName, titleList)
         
-        append(rpt,titleList);
+        append(rpt, titleList);
         moveToNextHole(rpt);
         imageObj = imageBuild(fileName);
         append(rpt,imageObj);
