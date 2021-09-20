@@ -133,6 +133,18 @@ classdef SimulationHandler < handle
                 start(obj)
             end
         end
+        
+        function resetResults(obj)
+            % Initialize output arrays
+            for i = 1:obj.NOutputs
+                obj.Results.Time{i} = [];
+                obj.Results.Data{i} = [];
+                obj.PastResults.Time{i} = [];
+                obj.PastResults.Data{i} = [];
+            end
+            obj.WasSimulating = false;
+            obj.IsPastResultsLoaded = false;
+        end % resetResults
                         
         function loadResults(obj)
             % Select session file
