@@ -57,14 +57,14 @@ classdef SimulationHandler < handle
             
             % If repetability checkbox is on, then repeat drive cycle cyclically
             if obj.TMP.EndSimulationTime > obj.TMP.DriveCycle.Time(end)
-                RepeatTimes = floor(obj./obj.TMP.DriveCycle.Data(end));
+                RepeatTimes = floor(obj.TMP.EndSimulationTime/obj.TMP.DriveCycle.Time(end));
                 [~, Remainder] = min(abs(obj.TMP.DriveCycle.Time-rem(obj.TMP.EndSimulationTime,obj.TMP.DriveCycle.Time(end))));
                 Time = obj.TMP.DriveCycle.Time;
-                for i = 1:dum-1
+                for i = 1:RepeatTimes-1
                     Time = [Time; Time(end) + obj.TMP.DriveCycle.Time]; %#ok<AGROW>
                 end
-                Time = [Time; Time(end) + obj.TMP.DriveCycle.Time(1:dum1)];
-                Velocity = [repmat(obj.TMP.DriveCycle.Data,RepeatTimes,1); obj.TMP.DriveCycle.Data(1:Remainder)];
+                Time = [Time; Time(end) + obj.TMP.DriveCycle.Time(1:Remainder)];
+                Velocity = [repmat(obj.TMP.DriveCycle.Data, RepeatTimes, 1); obj.TMP.DriveCycle.Data(1:Remainder)];
             else
                 Time = obj.TMP.DriveCycle.Time;
                 Velocity = obj.TMP.DriveCycle.Data;
@@ -112,7 +112,6 @@ classdef SimulationHandler < handle
         
         function endSimulationProcedures(obj)
             obj.ProgressPercentage = 0;
-            obj.WasSimulating = true;
             obj.IsSimulating = false;
             notify(obj, "SimulationEnded")
         end
@@ -164,12 +163,12 @@ classdef SimulationHandler < handle
         function exportResults(obj)
             % Enter file name and choose where to save
             [Filename, Path] = uiputfile({'*.mat', 'MAT-files (*.mat)'},...
-                [], 'NewSimulationResults');
+                [], 'NewSimuclclationResults');
             
             if ~isnumeric([Path, Filename])
                 % Save to a mat file
                 Result = obj.Results;
-                save([Path, Filename],'-struct','Result')
+                save([Path, Filename], '-struct', 'Result')
                 notify(obj, 'ResultsExported', NotifyData([Path, Filename]));
             else
                 % User selected "Cancel" and did not specify a path
@@ -203,8 +202,10 @@ classdef SimulationHandler < handle
                         obj.Results.Data{idx} = transpose(out.logsout{i}.Values.Data);
                     end
                 end
+                obj.WasSimulating = true;
             catch ME
                 notify(obj, "Error", NotifyData({ME.message, 'Simulation Error'}))
+                obj.WasSimulating = false;
             end
             endSimulationProcedures(obj)
         end

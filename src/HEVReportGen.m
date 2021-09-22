@@ -156,7 +156,7 @@ try
     %     close(docobj,false)
     %    web(pdfFullPath)
     %%
-%     web(rpt.OutputPath);
+     web(rpt.OutputPath);
     %% Display the report (optional) not available for the web App
     %     rptview(reportName,'pdf');
 catch
@@ -187,6 +187,6 @@ end
         % Where's my template?
         whoAmI = mfilename('fullpath');
         [fullpath, ~, ~] = fileparts(whoAmI);
-        template = fullfile(fullpath,templatename);
+        template = fullfile(fullpath, templatename);
     end
 end
