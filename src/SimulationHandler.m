@@ -163,7 +163,7 @@ classdef SimulationHandler < handle
         function exportResults(obj)
             % Enter file name and choose where to save
             [Filename, Path] = uiputfile({'*.mat', 'MAT-files (*.mat)'},...
-                [], 'NewSimuclclationResults');
+                [], 'NewSimulationResults');
             
             if ~isnumeric([Path, Filename])
                 % Save to a mat file
