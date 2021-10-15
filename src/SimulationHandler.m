@@ -227,6 +227,17 @@ classdef SimulationHandler < handle
                 end
             end
 
-        end                
+        end 
+
+        % Update model parameter value, taking into account the status of
+        % the simulation (running or idle). If running, then parameter value
+        % is updated live.
+        function updateSimulationParameter(obj, PropName, PropValue)
+            if obj.IsSimulating
+                simulink.compiler.modifyParameters(obj.ModelName, ...
+                    Simulink.Simulation.Variable(PropName, PropValue));
+            end
+            obj.TMP.(PropName) = PropValue;
+        end % updateSimulationParameter
     end
 end
