@@ -8,7 +8,7 @@ To run the demo, follow these steps:
 2. Open "HEVApp.mlapp" in App Designer (e.g., via the project shortcut)
 3. Run application
 
-Note: The first time the app is run code will be generated, so longer execution times are expected.
+Note: The first time the simulation is run from the app code will be generated, so longer execution times are expected.
 
 ## Required Products
 * Powertrain Blockset™
@@ -17,3 +17,8 @@ Note: The first time the app is run code will be generated, so longer execution 
 * MATLAB® Report Generator™
 * MATLAB® Compiler™
 * Simulink® Compiler™
+
+##License
+The license for Simulation Dashboard For A Hybrid Electric Vehicle is available in the license.txt file in this GitHub repository.
+
+Copyright 2021 The MathWorks, Inc.
