@@ -199,12 +199,10 @@ classdef SimulationHandler < handle
                     for i = 1:obj.NOutputs
                         idx = obj.Map(out.logsout{i}.Name);
                         obj.Results.Time{idx} = out.logsout{i}.Values.Time;
-                        a = squeeze(out.logsout{i}.Values.Data);
-                        if isequal(size(a,1),numel(obj.Results.Time{idx}))
-                            obj.Results.Data{idx} = transpose(a);
+                        OutData = squeeze(out.logsout{i}.Values.Data);
+                        if isequal(size(OutData,1), numel(obj.Results.Time{idx}))
+                            obj.Results.Data{idx} = transpose(OutData);
                         end
-                        %obj.Results.Data{idx} = reshape(squeeze(out.logsout{i}.Values.Data),numel(obj.Results.Time{idx}),1);
-                        %obj.Results.Data{idx} = transpose(out.logsout{i}.Values.Data);
                     end
                 end
                 obj.WasSimulating = true;
