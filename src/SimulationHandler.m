@@ -2,28 +2,31 @@ classdef SimulationHandler < handle
     
     events
         SimulationStarted
+        SimulationPaused
+        SimulationErrored
         SimulationEnded
         PastResultsLoaded
         ResultsExported
-        Error
+        ResultsUpdated
     end
     
     properties
         OutputNamesFile = "SimulationOutputs.xlsx"
         OutputName
         TMP % Tunable Model Parameters
-        IsSimulating = false
         WasSimulating = false
         IsPastResultsLoaded = false
-        ProgressPercentage = 0
         Map
         PastResults
-        Results
         NOutputs
+        Timer timer
+        RefreshRate = 5
     end
 
     properties (SetObservable)
         ShowLive = true % Live / End
+        Results
+        ProgressPercentage
     end
     
     properties(Access = private)
@@ -32,11 +35,43 @@ classdef SimulationHandler < handle
     end
     
     methods (Access = private)
-        
+
+        function getOutputs(obj, out)
+            for i = 1:obj.NOutputs
+                idx = obj.Map(out.logsout{i}.Name);
+                obj.Results.Time{idx} = out.logsout{i}.Values.Time;
+                OutData = squeeze(out.logsout{i}.Values.Data);
+                if isequal(size(OutData,1), numel(obj.Results.Time{idx}))
+                    obj.Results.Data{idx} = transpose(OutData);
+                end
+            end
+            notify(obj, "ResultsUpdated")
+        end
+
+        function onSimulationStart(obj, ~)
+            % Initialize output arrays
+            for i = 1:obj.NOutputs
+                obj.Results.Time{i} = [];
+                obj.Results.Data{i} = [];
+            end
+
+            % Run simulation
+            start(obj.Timer)
+            notify(obj, "SimulationStarted")
+        end % onSimulationStart
+
+        function getTemporaryOutput(obj, ~, ~)
+            % If simulation is running, collect temporary output
+            switch simulink.compiler.getSimulationStatus(obj.ModelName)
+                case "Running"
+                    % Update time
+                    obj.ProgressPercentage = simulink.compiler.getSimulationTime(obj.ModelName)/obj.TMP.EndSimulationTime*100;
+                    out = simulink.compiler.getSimulationOutput(obj.ModelName);
+                    getOutputs(obj, out)
+            end
+        end
+
         function startSimulationProcedures(obj)
-            obj.IsSimulating = true;
-            
-            %%
             % Select which model to simulate. The model name needs to be
             % passed explicitly to the simulation input object. Each case
             % selects the same model with a different variant selected (the
@@ -51,9 +86,11 @@ classdef SimulationHandler < handle
             end
             
             % If the user wants to see results while simulation is running
-            if obj.ShowLive
-                obj.SimIn = simulink.compiler.setExternalOutputsFcn(obj.SimIn, @obj.processOutputs);
-            end
+            %if obj.ShowLive
+            %    obj.SimIn = simulink.compiler.setExternalOutputsFcn(obj.SimIn, @obj.processOutputs);
+            %end
+            obj.SimIn = obj.SimIn.setPostSimFcn(@(~) obj.onSimulationEnd);
+            obj.SimIn = obj.SimIn.setPreSimFcn(@(~) obj.onSimulationStart);
             
             % If repetability checkbox is on, then repeat drive cycle cyclically
             if obj.TMP.EndSimulationTime > obj.TMP.DriveCycle.Time(end)
@@ -101,38 +138,18 @@ classdef SimulationHandler < handle
             %%
             % Configure for deployment
             obj.SimIn = simulink.compiler.configureForDeployment(obj.SimIn);
-            
-            % Initialize output arrays
-            for i = 1:obj.NOutputs
-                obj.Results.Time{i} = [];
-                obj.Results.Data{i} = [];
-            end
-            notify(obj, "SimulationStarted")
-        end
-        
-        function endSimulationProcedures(obj)
-            obj.ProgressPercentage = 0;
-            obj.IsSimulating = false;
+        end % startSimulationProcedures
+
+        function onSimulationEnd(obj, ~)
+            stop(obj.Timer)
+            obj.WasSimulating = true;
             notify(obj, "SimulationEnded")
         end
-                        
-        function processOutputs(obj, opIdx, Time, Data)
-            obj.Results.Time{opIdx} = [obj.Results.Time{opIdx} Time];
-            obj.Results.Data{opIdx} = [obj.Results.Data{opIdx} Data];
-            obj.ProgressPercentage = ceil(Time/obj.TMP.EndSimulationTime*100);
-        end
+
     end % methods (Access = private)
     
     methods
-                
-        function startOrStopSimulation(obj)
-            if obj.IsSimulating
-                stop(obj)
-            else
-                start(obj)
-            end
-        end
-        
+                        
         function resetResults(obj)
             % Initialize output arrays
             for i = 1:obj.NOutputs
@@ -178,6 +195,10 @@ classdef SimulationHandler < handle
  
         function obj = SimulationHandler   
             obj.TMP = HEVData;
+            obj.ModelName = ['Hev_' obj.TMP.Engine];
+            if ~isdeployed
+                load_system(obj.ModelName)
+            end
             % Read simulation outputs and create map container
             tab = readtable(obj.OutputNamesFile);
             obj.OutputName = tab.Name;
@@ -187,36 +208,50 @@ classdef SimulationHandler < handle
                 obj.Results.Time{i} = [];
                 obj.Results.Data{i} = [];
             end
+
+            % Define timer that collects temporary output
+            obj.Timer = timer(...
+                ExecutionMode = "fixedRate", ...
+                Period = 0.1, ...
+                TimerFcn = @obj.getTemporaryOutput);
         end
-        
-        function start(obj)
-            try
-                startSimulationProcedures(obj)
-                if obj.ShowLive
-                    sim(obj.SimIn);
-                else
-                    out = sim(obj.SimIn);
-                    for i = 1:obj.NOutputs
-                        idx = obj.Map(out.logsout{i}.Name);
-                        obj.Results.Time{idx} = out.logsout{i}.Values.Time;
-                        OutData = squeeze(out.logsout{i}.Values.Data);
-                        if isequal(size(OutData,1), numel(obj.Results.Time{idx}))
-                            obj.Results.Data{idx} = transpose(OutData);
-                        end
-                    end
-                end
-                obj.WasSimulating = true;
-            catch ME
-                notify(obj, "Error", NotifyData({ME.message, 'Simulation Error'}))
-                obj.WasSimulating = false;
+               
+        function stopSimulation(obj)
+            switch simulink.compiler.getSimulationStatus(obj.ModelName)
+                case {"Running", "Paused"}
+                    simulink.compiler.stopSimulation(obj.ModelName);
             end
-            endSimulationProcedures(obj)
-        end
-        
-        function stop(obj)
-            simulink.compiler.stopSimulation(obj.ModelName);
-            endSimulationProcedures(obj)
-        end
+        end % stopSimulation
+
+        function toggleExecution(obj)
+            switch simulink.compiler.getSimulationStatus(obj.ModelName)
+                case "Inactive"
+                    try
+                        % Create simulation input object
+                        startSimulationProcedures(obj)
+
+                        % Run simulation
+                        out = sim(obj.SimIn);
+                        getOutputs(obj, out)
+                    catch ME
+                        stopSimulation(obj)
+                        notify(obj, "SimulationErrored", NotifyData({ME.message, 'Simulation Error'}))
+                    end
+
+                case "Running"
+                    simulink.compiler.pauseSimulation(obj.ModelName);
+                    stop(obj.Timer)
+                    notify(obj, "SimulationPaused")
+
+                case "Terminating"
+                    % Do nothing as simulation is almost finished
+
+                case "Paused"
+                    start(obj.Timer)
+                    notify(obj, "SimulationStarted")
+                    simulink.compiler.resumeSimulation(obj.ModelName);
+            end
+        end % toggleExecution
         
         function restore(obj)
             
@@ -236,11 +271,20 @@ classdef SimulationHandler < handle
         % the simulation (running or idle). If running, then parameter value
         % is updated live.
         function updateSimulationParameter(obj, PropName, PropValue)
-            if obj.IsSimulating
-                simulink.compiler.modifyParameters(obj.ModelName, ...
-                    Simulink.Simulation.Variable(PropName, PropValue));
+            % If simulation is running, need to pause simulation for
+            % changes to take effect
+            switch simulink.compiler.getSimulationStatus(obj.ModelName)
+                case "Running"
+                    simulink.compiler.pauseSimulation(obj.ModelName);
+                    simulink.compiler.modifyParameters(obj.ModelName, ...
+                        Simulink.Simulation.Variable(PropName, PropValue));
+                    simulink.compiler.resumeSimulation(obj.ModelName);
+                case "Paused"
+                    simulink.compiler.modifyParameters(obj.ModelName, ...
+                        Simulink.Simulation.Variable(PropName, PropValue));
             end
+
             obj.TMP.(PropName) = PropValue;
-        end % updateSimulationParameter
+        end % updateSimParam
     end
 end

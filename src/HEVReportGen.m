@@ -139,7 +139,7 @@ try
             case "Title11"
                 plotSimulation(rpt,"plot11.jpg",Data.OutputName{11})
             case "MWCopyright"
-                append(rpt,"© 1994-2021 The MathWorks, Inc.");
+                append(rpt,"© 1994-" + year(datetime) + " The MathWorks, Inc.");
         end
         holeID  = moveToNextHole(rpt);
         Bar.Value = min(Bar.Value + 0.03,0.99);

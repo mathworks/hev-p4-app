@@ -1,6 +1,6 @@
 classdef AppSession < handle
     
-    events
+    events (NotifyAccess = private)
         % New session created
         NewSession
         % Pre-saved session loaded
@@ -17,8 +17,8 @@ classdef AppSession < handle
         LoadMenu       matlab.ui.container.Menu
         SaveMenu       matlab.ui.container.Menu
         SaveAsMenu     matlab.ui.container.Menu
-        isSession = false
-        Username = "User"
+        isSession (1,1) logical = false
+        Username (1,1) string = "User"
     end
     
     % Properties associated with session
