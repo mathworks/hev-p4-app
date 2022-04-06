@@ -15,8 +15,10 @@ Note: The first time the simulation is run from the app code will be generated, 
 * MATLAB
 * Simulink
 * MATLAB Report Generator™
+* Stateflow®
+* Simulink Compiler™
 
 ## License
-The license for Simulation Dashboard For A Hybrid Electric Vehicle is available in the license.txt file in this GitHub repository.
+The license for Simulation App For A Hybrid Electric Vehicle is available in the license.txt file in this GitHub repository.
 
 Copyright 2021-2022 The MathWorks, Inc.
