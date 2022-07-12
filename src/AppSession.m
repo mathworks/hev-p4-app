@@ -27,7 +27,7 @@ classdef AppSession < handle
         SessionName
         SessionData (:,:) cell
         DefaultData (:,:) cell
-        isSavedSession = false
+        isSavedSession logical = false
         AppComponents
     end % Properties (Access = private)
     
@@ -52,26 +52,26 @@ classdef AppSession < handle
             
             % Create NewMenu
             obj.NewMenu = uimenu(obj.SessionMenu);
-            obj.NewMenu.MenuSelectedFcn = @obj.newMenuSelected;
+            obj.NewMenu.MenuSelectedFcn = @(~,~) obj.newMenuSelected;
             obj.NewMenu.Accelerator = 'N';
             obj.NewMenu.Text = 'New';
             
             % Create LoadMenu
             obj.LoadMenu = uimenu(obj.SessionMenu);
-            obj.LoadMenu.MenuSelectedFcn = @obj.loadMenuSelected;
+            obj.LoadMenu.MenuSelectedFcn = @(~,~) obj.loadMenuSelected;
             obj.LoadMenu.Accelerator = 'L';
             obj.LoadMenu.Text = 'Load...';
             
             % Create SaveMenu
             obj.SaveMenu = uimenu(obj.SessionMenu);
-            obj.SaveMenu.MenuSelectedFcn = @obj.saveMenuSelected;
+            obj.SaveMenu.MenuSelectedFcn = @(~,~) obj.saveMenuSelected;
             obj.SaveMenu.Text = 'Save';
             obj.SaveMenu.Accelerator = 'S';
             obj.SaveMenu.Separator = true;
             
             % Create SaveAsMenu
             obj.SaveAsMenu = uimenu(obj.SessionMenu);
-            obj.SaveAsMenu.MenuSelectedFcn = @obj.saveAsMenuSelected;
+            obj.SaveAsMenu.MenuSelectedFcn = @(~,~) obj.saveAsMenuSelected;
             obj.SaveAsMenu.Accelerator = 'A';
             obj.SaveAsMenu.Text = 'Save As...';
                        
@@ -80,7 +80,7 @@ classdef AppSession < handle
     
     methods
         
-        function loadMenuSelected(obj,~,~)
+        function loadMenuSelected(obj)
             if obj.isSession
                 % Want to save current session?
                 Answer = saveSessionWithConfirm(obj);
@@ -117,7 +117,7 @@ classdef AppSession < handle
             end % loadSaveSession
         end % loadMenuSelected
         
-        function newMenuSelected(obj,~,~)
+        function newMenuSelected(obj)
             if obj.isSession
                 % Want to save current session?
                 Answer = saveSessionWithConfirm(obj);
@@ -134,8 +134,8 @@ classdef AppSession < handle
                 notify(obj,"NewSession")
                 obj.isSession = true;
             end
-        end
-    end
+        end % newMenuSelected
+    end % methods
     
     methods (Access = private)
         
@@ -199,7 +199,7 @@ classdef AppSession < handle
         end
                 
         % Overwrite saved session
-        function saveMenuSelected(obj,~,~)
+        function saveMenuSelected(obj)
             saveSession(obj)
         end
         
@@ -268,7 +268,7 @@ classdef AppSession < handle
             obj.isSavedSession = true;
         end % saveCurrentSession
         
-        function saveAsMenuSelected(obj,~,~)
+        function saveAsMenuSelected(obj)
             saveNewSession(obj)
         end
                

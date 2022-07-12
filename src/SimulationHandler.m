@@ -14,17 +14,17 @@ classdef SimulationHandler < handle
         OutputNamesFile = "SimulationOutputs.xlsx"
         OutputName
         TMP % Tunable Model Parameters
-        WasSimulating = false
-        IsPastResultsLoaded = false
+        WasSimulating (1,1) logical = false
+        IsPastResultsLoaded (1,1) logical = false
         Map
         PastResults
-        NOutputs
+        NOutputs double {isscalar}
         Timer timer
         RefreshRate = 5
     end
 
     properties (SetObservable)
-        ShowLive = true % Live / End
+        ShowLive (1,1) logical = true % Live / End
         Results
         ProgressPercentage
     end
@@ -253,10 +253,8 @@ classdef SimulationHandler < handle
             end
         end % toggleExecution
         
-        function restore(obj)
-            
-            restore(obj.TMP)
-            
+        function restore(obj)          
+            restore(obj.TMP)          
             mc = ?SimulationHandler;
             mp = mc.PropertyList;
             for k = 1:length(mp)
@@ -264,7 +262,6 @@ classdef SimulationHandler < handle
                     obj.(mp(k).Name) = mp(k).DefaultValue;
                 end
             end
-
         end 
 
         % Update model parameter value, taking into account the status of
